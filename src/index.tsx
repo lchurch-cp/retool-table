@@ -233,6 +233,19 @@ const classifySecondLevel = (row: any): string => {
   return classifyInfo(row).mid
 }
 
+const classifyMarketingGroup = (row: any): string => {
+  const info = classifyInfo(row)
+  if (
+    info.top === 'Social' ||
+    info.top === 'Shopping' ||
+    info.top === 'Search' ||
+    info.top === 'Display' ||
+    (info.top === 'Non-Paid' && info.mid === 'Email/SMS')
+  )
+    return 'Marketing'
+  return 'Non-Marketing'
+}
+
 export const CampaignTree = () => {
   const [data] = Retool.useStateObject({
     name: 'data',
@@ -263,6 +276,7 @@ export const CampaignTree = () => {
   })
 
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({})
+  const [marketingView, setMarketingView] = useState(false)
 
   const toggleRow = (key: string) => {
     setExpandedKeys((prev) => ({
@@ -303,11 +317,13 @@ export const CampaignTree = () => {
   ) => {
     const key = keys[depth]
     const rawValue =
-      key === 'topClassification'
-        ? classifyTopLevel(row)
-        : key === 'secondClassification'
-          ? classifySecondLevel(row)
-          : row[key]
+      key === 'marketingClassification'
+        ? classifyMarketingGroup(row)
+        : key === 'topClassification'
+          ? classifyTopLevel(row)
+          : key === 'secondClassification'
+            ? classifySecondLevel(row)
+            : row[key]
 
     if (!rawValue || rawValue === '(Unnamed)') {
       if (depth < keys.length - 1) {
@@ -330,7 +346,7 @@ export const CampaignTree = () => {
     }
   }
 
-  const layoutKeys =
+  const baseLayoutKeys =
     Array.isArray(layout) && layout.length > 0
       ? (layout as string[])
       : [
@@ -339,6 +355,10 @@ export const CampaignTree = () => {
           'New_mapping',
           'Campaign_Nm'
         ]
+
+  const layoutKeys = marketingView
+    ? ['marketingClassification', ...baseLayoutKeys]
+    : baseLayoutKeys
 
   rowsCurrent.forEach((row) => {
     insertRow(grouped, row, 0, layoutKeys, false)
@@ -446,6 +466,16 @@ export const CampaignTree = () => {
 
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '12px' }}>
+      <div style={{ marginBottom: '12px' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={marketingView}
+            onChange={(e) => setMarketingView(e.target.checked)}
+          />{' '}
+          Marketing vs Non-Marketing
+        </label>
+      </div>
       <div style={{ overflowX: 'auto' }}>
         <table
           style={{
