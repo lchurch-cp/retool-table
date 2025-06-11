@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Retool } from '@tryretool/custom-component-support';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 type CampaignNode = {
   name: string;
@@ -78,15 +79,9 @@ export const CampaignTree = () => {
         ? classifyTopLevel(row)
         : row[key] || '(Unnamed)';
 
-    let node = nodes.find(n => n.name === value);
-    if (!node) {
-      node = { name: value, children: [] };
-      nodes.push(node);
-    }
-
     if (depth === keys.length - 1) {
-      node.children!.push({
-        name: row.Campaign_Nm || value,
+      nodes.push({
+        name: row.Campaign_Nm || row[key] || value,
         Cost: row.Cost,
         Revenue: row.Revenue,
         Sessions: row.Sessions,
@@ -99,6 +94,11 @@ export const CampaignTree = () => {
         Date: row.Latest_Date || row.Date
       });
     } else {
+      let node = nodes.find(n => n.name === value);
+      if (!node) {
+        node = { name: value, children: [] };
+        nodes.push(node);
+      }
       insertRow(node.children!, row, depth + 1, keys);
     }
   };
