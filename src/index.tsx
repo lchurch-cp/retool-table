@@ -134,6 +134,19 @@ export const CampaignTree = () => {
     insertRow(grouped, row, 0, layoutKeys, true);
   });
 
+  const totals: { current: Metrics; prior: Metrics } = {
+    current: {},
+    prior: {}
+  };
+  grouped.forEach(node => {
+    metricDefs.forEach(def => {
+      totals.current[def.key] =
+        (totals.current[def.key] || 0) + (node.current[def.key] || 0);
+      totals.prior[def.key] =
+        (totals.prior[def.key] || 0) + (node.prior[def.key] || 0);
+    });
+  });
+
   const formatNum = (num: number | undefined, digits: number) =>
     num != null ? num.toFixed(digits) : '';
 
@@ -192,6 +205,26 @@ export const CampaignTree = () => {
           </tr>
         </thead>
         <tbody>{renderRows(grouped)}</tbody>
+        <tfoot>
+          <tr style={{ fontWeight: 'bold', borderTop: '2px solid #ccc' }}>
+            <td style={{ padding: '4px 8px' }}>Grand Total</td>
+            {metricDefs.flatMap(def => {
+              const curr = totals.current[def.key];
+              const prior = totals.prior[def.key];
+              return [
+                <td key={`total-${def.key}`} style={{ padding: '4px 8px' }}>
+                  {formatNum(curr, def.digits)}
+                </td>,
+                <td key={`total-${def.key}-p`} style={{ padding: '4px 8px' }}>
+                  {formatNum(prior, def.digits)}
+                </td>,
+                <td key={`total-${def.key}-c`} style={{ padding: '4px 8px' }}>
+                  {pctChange(curr, prior)}
+                </td>
+              ];
+            })}
+          </tr>
+        </tfoot>
       </table>
     </div>
   );
