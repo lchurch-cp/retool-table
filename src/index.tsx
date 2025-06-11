@@ -223,8 +223,15 @@ const classifyInfo = (row: any): Classification => {
   return { top: defaultTopClassification(mapping), mid: 'Other' }
 }
 
-const classifyTopLevel = (row: any): string => classifyInfo(row).top
-const classifySecondLevel = (row: any): string => classifyInfo(row).mid
+const classifyTopLevel = (row: any): string => {
+  if (row.Top_Level_Group) return row.Top_Level_Group
+  return classifyInfo(row).top
+}
+
+const classifySecondLevel = (row: any): string => {
+  if (row.Sub_Group) return row.Sub_Group
+  return classifyInfo(row).mid
+}
 
 export const CampaignTree = () => {
   const [data] = Retool.useStateObject({
