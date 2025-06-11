@@ -302,16 +302,24 @@ export const CampaignTree = () => {
     isPrior: boolean
   ) => {
     const key = keys[depth]
-    const value =
+    const rawValue =
       key === 'topClassification'
         ? classifyTopLevel(row)
         : key === 'secondClassification'
           ? classifySecondLevel(row)
-          : row[key] || '(Unnamed)'
+          : row[key]
 
-    let node = nodes.find((n) => n.name === value)
+    if (!rawValue || rawValue === '(Unnamed)') {
+      if (depth < keys.length - 1) {
+        // Skip unnamed levels and attach children directly to the parent
+        insertRow(nodes, row, depth + 1, keys, isPrior)
+      }
+      return
+    }
+
+    let node = nodes.find((n) => n.name === rawValue)
     if (!node) {
-      node = { name: value, current: {}, prior: {}, children: [] }
+      node = { name: rawValue, current: {}, prior: {}, children: [] }
       nodes.push(node)
     }
 
