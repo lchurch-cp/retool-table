@@ -22,16 +22,28 @@ interface CampaignNode {
   children?: CampaignNode[];
 }
 
-const metricDefs = [
-  { key: 'Cost', label: 'Cost', digits: 2 },
-  { key: 'Revenue', label: 'Revenue', digits: 2 },
+interface MetricDef {
+  key: keyof Metrics;
+  label: string;
+  digits: number;
+  currency?: boolean;
+}
+
+const metricDefs: readonly MetricDef[] = [
+  { key: 'Cost', label: 'Cost', digits: 2, currency: true },
+  { key: 'Revenue', label: 'Revenue', digits: 2, currency: true },
   { key: 'Sessions', label: 'Sessions', digits: 0 },
   { key: 'Transactions', label: 'Transactions', digits: 0 },
   { key: 'NewUsers', label: 'New Users', digits: 0 },
-  { key: 'GA_last_click_revenue', label: 'GA Last Click Rev', digits: 2 },
-  { key: 'Attributed_Revenue', label: 'Attributed Rev', digits: 2 },
-  { key: 'Revenue_minus_embedded_awareness', label: 'Rev minus Awareness', digits: 2 },
-  { key: 'embedded_awareness', label: 'Embedded Awareness', digits: 2 }
+  { key: 'GA_last_click_revenue', label: 'GA Last Click Rev', digits: 2, currency: true },
+  { key: 'Attributed_Revenue', label: 'Attributed Rev', digits: 2, currency: true },
+  {
+    key: 'Revenue_minus_embedded_awareness',
+    label: 'Rev minus Awareness',
+    digits: 2,
+    currency: true
+  },
+  { key: 'embedded_awareness', label: 'Embedded Awareness', digits: 2, currency: true }
 ] as const;
 
 export const CampaignTree = () => {
@@ -147,13 +159,21 @@ export const CampaignTree = () => {
     });
   });
 
-  const formatNum = (num: number | undefined, digits: number) =>
-    num != null ? num.toFixed(digits) : (0).toFixed(digits);
+  const formatNum = (num: number | undefined, digits: number, currency = false) => {
+    const value = num != null ? num : 0;
+    const formatted = value.toLocaleString(undefined, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    });
+    return currency ? `$${formatted}` : formatted;
+  };
 
   const pctChange = (curr?: number, prior?: number) => {
     if (prior == null || prior === 0 || curr == null) return '';
     return (((curr - prior) / prior) * 100).toFixed(2) + '%';
   };
+
+  let rowCounter = 0;
 
   const renderRows = (nodes: CampaignNode[], depth = 0, parentKey = ''): JSX.Element[] => {
     return nodes.flatMap((node, index) => {
@@ -161,10 +181,13 @@ export const CampaignTree = () => {
       const isExpanded = expandedKeys[key];
       const hasChildren = Array.isArray(node.children) && node.children.length > 0;
 
+      const rowColor = rowCounter % 2 === 0 ? '#ffffff' : '#f2f2f2';
+      rowCounter++;
+
       return [
         <tr
           key={key}
-          style={{ fontWeight: hasChildren ? 'bold' : 'normal', background: hasChildren ? '#f9f9f9' : 'inherit' }}
+          style={{ fontWeight: hasChildren ? 'bold' : 'normal', background: rowColor }}
         >
           <td style={{ padding: '4px 8px', minWidth: '240px' }}>
             <div style={{ display: 'flex', alignItems: 'center', paddingLeft: `${depth * 24}px` }}>
@@ -180,8 +203,8 @@ export const CampaignTree = () => {
             const curr = node.current[def.key];
             const prior = node.prior[def.key];
             return [
-              <td key={`${key}-${def.key}`} style={{ padding: '4px 8px' }}>{formatNum(curr, def.digits)}</td>,
-              <td key={`${key}-${def.key}-p`} style={{ padding: '4px 8px' }}>{formatNum(prior, def.digits)}</td>,
+              <td key={`${key}-${def.key}`} style={{ padding: '4px 8px' }}>{formatNum(curr, def.digits, def.currency)}</td>,
+              <td key={`${key}-${def.key}-p`} style={{ padding: '4px 8px' }}>{formatNum(prior, def.digits, def.currency)}</td>,
               <td key={`${key}-${def.key}-c`} style={{ padding: '4px 8px' }}>{pctChange(curr, prior)}</td>
             ];
           })}
@@ -207,17 +230,23 @@ export const CampaignTree = () => {
         </thead>
         <tbody>{renderRows(grouped)}</tbody>
         <tfoot>
-          <tr style={{ fontWeight: 'bold', borderTop: '2px solid #ccc' }}>
+          <tr
+            style={{
+              fontWeight: 'bold',
+              borderTop: '2px solid #ccc',
+              background: rowCounter % 2 === 0 ? '#ffffff' : '#f2f2f2'
+            }}
+          >
             <td style={{ padding: '4px 8px' }}>Grand Total</td>
             {metricDefs.flatMap(def => {
               const curr = totals.current[def.key];
               const prior = totals.prior[def.key];
               return [
                 <td key={`total-${def.key}`} style={{ padding: '4px 8px' }}>
-                  {formatNum(curr, def.digits)}
+                  {formatNum(curr, def.digits, def.currency)}
                 </td>,
                 <td key={`total-${def.key}-p`} style={{ padding: '4px 8px' }}>
-                  {formatNum(prior, def.digits)}
+                  {formatNum(prior, def.digits, def.currency)}
                 </td>,
                 <td key={`total-${def.key}-c`} style={{ padding: '4px 8px' }}>
                   {pctChange(curr, prior)}
