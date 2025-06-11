@@ -24,6 +24,15 @@ export const CampaignTree = () => {
     description: 'Nested campaign hierarchy'
   });
 
+  const [layout] = Retool.useStateArray({
+    name: 'layout',
+    label: 'Nesting Layout',
+    inspector: 'text',
+    description:
+      'JSON array of field names that defines the nesting order. Use "topClassification" for computed top level.',
+    initialValue: ['topClassification', 'New_mapping', 'Campaign_Nm']
+  });
+
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
 
   const toggleRow = (key: string) => {
@@ -56,7 +65,43 @@ export const CampaignTree = () => {
 
   const rowsRaw = columnToRow(data);
   const grouped: CampaignNode[] = [];
-  const topMap: Record<string, CampaignNode> = {};
+
+  const insertRow = (
+    nodes: CampaignNode[],
+    row: any,
+    depth: number,
+    keys: string[]
+  ) => {
+    const key = keys[depth];
+    const value =
+      key === 'topClassification'
+        ? classifyTopLevel(row)
+        : row[key] || '(Unnamed)';
+
+    let node = nodes.find(n => n.name === value);
+    if (!node) {
+      node = { name: value, children: [] };
+      nodes.push(node);
+    }
+
+    if (depth === keys.length - 1) {
+      node.children!.push({
+        name: row.Campaign_Nm || value,
+        Cost: row.Cost,
+        Revenue: row.Revenue,
+        Sessions: row.Sessions,
+        Transactions: row.Transactions,
+        NewUsers: row.NewUsers,
+        GA_last_click_revenue: row.GA_last_click_revenue,
+        Attributed_Revenue: row.Attributed_Revenue,
+        Revenue_minus_embedded_awareness: row.Revenue_minus_embedded_awareness,
+        embedded_awareness: row.embedded_awareness,
+        Date: row.Latest_Date || row.Date
+      });
+    } else {
+      insertRow(node.children!, row, depth + 1, keys);
+    }
+  };
 
   const sumMetrics = (nodes: CampaignNode[]): CampaignNode => {
     const totals: CampaignNode = {
@@ -88,36 +133,13 @@ export const CampaignTree = () => {
     return totals;
   };
 
+  const layoutKeys =
+    Array.isArray(layout) && layout.length > 0
+      ? (layout as string[])
+      : ['topClassification', 'New_mapping', 'Campaign_Nm'];
+
   rowsRaw.forEach(row => {
-    const top = classifyTopLevel(row);
-    const mid = row.New_mapping || 'Unmapped';
-    const campaign = row.Campaign_Nm || '(Unnamed)';
-
-    if (!topMap[top]) {
-      topMap[top] = { name: top, children: [] };
-      grouped.push(topMap[top]);
-    }
-
-    const topNode = topMap[top];
-    let midNode = topNode.children!.find(c => c.name === mid);
-    if (!midNode) {
-      midNode = { name: mid, children: [] };
-      topNode.children!.push(midNode);
-    }
-
-    midNode.children!.push({
-      name: campaign,
-      Cost: row.Cost,
-      Revenue: row.Revenue,
-      Sessions: row.Sessions,
-      Transactions: row.Transactions,
-      NewUsers: row.NewUsers,
-      GA_last_click_revenue: row.GA_last_click_revenue,
-      Attributed_Revenue: row.Attributed_Revenue,
-      Revenue_minus_embedded_awareness: row.Revenue_minus_embedded_awareness,
-      embedded_awareness: row.embedded_awareness,
-      Date: row.Latest_Date || row.Date
-    });
+    insertRow(grouped, row, 0, layoutKeys);
   });
 
   const renderRows = (nodes: CampaignNode[], depth = 0, parentKey = ''): JSX.Element[] => {
