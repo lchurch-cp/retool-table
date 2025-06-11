@@ -141,9 +141,9 @@ const classificationMap: Record<string, Classification> = {
     mid: 'Organic Social'
   },
   'referral': { top: 'Non-Paid', mid: 'Referral' },
-  'email': { top: 'Non-Paid', mid: 'Email/SMS' },
+  'email': { top: 'Non-Paid Email/SMS', mid: 'Email/SMS' },
   'attentive - sms/text': {
-    top: 'Non-Paid',
+    top: 'Non-Paid Email/SMS',
     mid: 'Email/SMS'
   },
   'direct': { top: 'Non-Paid', mid: 'Direct' },
@@ -207,6 +207,8 @@ const defaultTopClassification = (mapping: string): string => {
   )
     return 'Social'
   if (mapping.includes('display') || mapping.includes('daba')) return 'Display'
+  if (mapping.includes('email') || mapping.includes('sms'))
+    return 'Non-Paid Email/SMS'
   if (
     mapping.includes('organic') ||
     mapping.includes('not set') ||
