@@ -238,15 +238,10 @@ const classifySecondLevel = (row: any): string => {
 
 const classifyMarketingGroup = (row: any): string => {
   const info = classifyInfo(row)
-  if (
-    info.top === 'Social' ||
-    info.top === 'Shopping' ||
-    info.top === 'Search' ||
-    info.top === 'Display' ||
-    (info.top === 'Non-Paid' && info.mid === 'Email/SMS')
-  )
-    return 'Marketing'
-  return 'Non-Marketing'
+  // Treat anything that isn't explicitly "Non-Paid" as part of Marketing.
+  // This ensures Display and uncategorized rows are grouped under Marketing
+  // instead of Non-Marketing.
+  return info.top === 'Non-Paid' ? 'Non-Marketing' : 'Marketing'
 }
 
 export const CampaignTree = () => {
