@@ -140,13 +140,13 @@ const classificationMap: Record<string, Classification> = {
     top: 'Non-Paid',
     mid: 'Organic Social'
   },
-  'referral': { top: 'Non-Paid', mid: 'Referral' },
-  'email': { top: 'Non-Paid Email/SMS', mid: 'Email/SMS' },
+  referral: { top: 'Non-Paid', mid: 'Referral' },
+  email: { top: 'Non-Paid Email/SMS', mid: 'Email/SMS' },
   'attentive - sms/text': {
     top: 'Non-Paid Email/SMS',
     mid: 'Email/SMS'
   },
-  'direct': { top: 'Non-Paid', mid: 'Direct' },
+  direct: { top: 'Non-Paid', mid: 'Direct' },
   'google non-brand shopping': {
     top: 'Shopping',
     mid: 'NBR Shopping'
@@ -398,6 +398,72 @@ export const CampaignTree = () => {
     return (((curr - prior) / prior) * 100).toFixed(2) + '%'
   }
 
+  const escapeCsv = (value: string): string => {
+    if (value.includes('"') || value.includes(',') || value.includes('\n')) {
+      return '"' + value.replace(/"/g, '""') + '"'
+    }
+    return value
+  }
+
+  const buildCsvRows = (
+    nodes: CampaignNode[],
+    path: string[] = []
+  ): string[][] => {
+    return nodes.flatMap((node) => {
+      const name = [...path, node.name].join(' / ')
+      const row: string[] = [name]
+      metricDefs.forEach((def) => {
+        row.push(
+          formatNum(node.current[def.key], def.digits, def.currency),
+          formatNum(node.prior[def.key], def.digits, def.currency),
+          pctChange(node.current[def.key], node.prior[def.key])
+        )
+      })
+      const children =
+        node.children && node.children.length > 0
+          ? buildCsvRows(node.children, [...path, node.name])
+          : []
+      return [row, ...children]
+    })
+  }
+
+  const generateCsv = () => {
+    const header = [
+      'Name',
+      ...metricDefs.flatMap((def) => [
+        def.label,
+        `${def.label} Prior`,
+        '% Change'
+      ])
+    ]
+    const rows: string[][] = [header, ...buildCsvRows(grouped)]
+
+    const totalRow: string[] = ['Grand Total']
+    metricDefs.forEach((def) => {
+      totalRow.push(
+        formatNum(totals.current[def.key], def.digits, def.currency),
+        formatNum(totals.prior[def.key], def.digits, def.currency),
+        pctChange(totals.current[def.key], totals.prior[def.key])
+      )
+    })
+    rows.push(totalRow)
+
+    return rows.map((row) => row.map((c) => escapeCsv(c)).join(',')).join('\n')
+  }
+
+  const downloadCsv = () => {
+    const csv = generateCsv()
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'campaign_data.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   let rowCounter = 0
 
   const renderRows = (
@@ -475,6 +541,9 @@ export const CampaignTree = () => {
           />{' '}
           Marketing vs Non-Marketing
         </label>
+        <button onClick={downloadCsv} style={{ marginLeft: '12px' }}>
+          Export CSV
+        </button>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table
