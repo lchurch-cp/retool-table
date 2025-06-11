@@ -153,7 +153,7 @@ export const CampaignTree = () => {
           key={key}
           style={{ fontWeight: hasChildren ? 'bold' : 'normal', background: hasChildren ? '#f9f9f9' : 'inherit' }}
         >
-          <td style={{ paddingLeft: `${depth * 20}px` }}>
+          <td style={{ paddingLeft: `${depth * 20}px`, padding: '4px 8px' }}>
             {hasChildren && (
               <button onClick={() => toggleRow(key)} style={{ marginRight: '6px' }}>
                 {isExpanded ? '▾' : '▸'}
@@ -165,9 +165,9 @@ export const CampaignTree = () => {
             const curr = node.current[def.key];
             const prior = node.prior[def.key];
             return [
-              <td key={`${key}-${def.key}`}>{formatNum(curr, def.digits)}</td>,
-              <td key={`${key}-${def.key}-p`}>{formatNum(prior, def.digits)}</td>,
-              <td key={`${key}-${def.key}-c`}>{pctChange(curr, prior)}</td>
+              <td key={`${key}-${def.key}`} style={{ padding: '4px 8px' }}>{formatNum(curr, def.digits)}</td>,
+              <td key={`${key}-${def.key}-p`} style={{ padding: '4px 8px' }}>{formatNum(prior, def.digits)}</td>,
+              <td key={`${key}-${def.key}-c`} style={{ padding: '4px 8px' }}>{pctChange(curr, prior)}</td>
             ];
           })}
         </tr>,
@@ -181,11 +181,11 @@ export const CampaignTree = () => {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
         <thead>
           <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
-            <th>Name</th>
+            <th style={{ padding: '4px 8px' }}>Name</th>
             {metricDefs.flatMap(def => [
-              <th key={def.key}>{def.label}</th>,
-              <th key={def.key + '-p'}>{def.label} Prior</th>,
-              <th key={def.key + '-c'}>% Change</th>
+              <th key={def.key} style={{ padding: '4px 8px' }}>{def.label}</th>,
+              <th key={def.key + '-p'} style={{ padding: '4px 8px' }}>{def.label} Prior</th>,
+              <th key={def.key + '-c'} style={{ padding: '4px 8px' }}>% Change</th>
             ])}
           </tr>
         </thead>
