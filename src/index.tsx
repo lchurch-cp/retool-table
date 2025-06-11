@@ -67,55 +67,55 @@ interface Classification {
 }
 
 const classificationMap: Record<string, Classification> = {
-  'paid social awareness campaign items': {
+  'paid social awareness': {
     top: 'Social',
     mid: 'Social Organic Boosting'
   },
-  'paid social - iris campaign items': {
+  'paid social - iris': {
     top: 'Social',
     mid: 'Social Mid-Funnel Campaigns'
   },
-  'meta - acquisition - mid funnel pm campaign items': {
+  'meta - acquisition - mid funnel pm': {
     top: 'Social',
     mid: 'Social Mid-Funnel Campaigns'
   },
-  'meta - remarketing - mid funnel pm campaign items': {
+  'meta - remarketing - mid funnel pm': {
     top: 'Social',
     mid: 'Social Mid-Funnel Campaigns'
   },
-  'youtube - acquisition - mid funnel pm campaign items': {
+  'youtube - acquisition - mid funnel pm': {
     top: 'Social',
     mid: 'Social Mid-Funnel Campaigns'
   },
-  'tiktok - acquisition - mid funnel pm campaign items': {
+  'tiktok - acquisition - mid funnel pm': {
     top: 'Social',
     mid: 'Social Mid-Funnel Campaigns'
   },
-  'facebook prospecting - daba campaign items': {
+  'facebook prospecting - daba': {
     top: 'Social',
     mid: 'Social DABA'
   },
-  'pinterest remarketing campaign items': {
+  'pinterest remarketing': {
     top: 'Social',
     mid: 'Social Retargeting'
   },
-  'tiktok - remarketing campaign items': {
+  'tiktok - remarketing': {
     top: 'Social',
     mid: 'Social Retargeting'
   },
-  'tiktok remarketing campaign items': {
+  'tiktok remarketing': {
     top: 'Social',
     mid: 'Social Retargeting'
   },
-  'facebook remarketing campaign items': {
+  'facebook remarketing': {
     top: 'Social',
     mid: 'Social Retargeting'
   },
-  'pinterest paid prospecting campaign items': {
+  'pinterest paid prospecting': {
     top: 'Social',
     mid: 'Social Performance Prospecting'
   },
-  'facebook prospecting campaign items': {
+  'facebook prospecting': {
     top: 'Social',
     mid: 'Social Performance Prospecting'
   },
@@ -123,71 +123,71 @@ const classificationMap: Record<string, Classification> = {
     top: 'Non-Paid',
     mid: 'Other'
   },
-  'misc/uncategorized campaign items': { top: 'Non-Paid', mid: 'Not Set' },
-  'not set / not set campaign items': { top: 'Non-Paid', mid: 'Not Set' },
-  'non-coupon affiliate(s) campaign items': {
+  'misc/uncategorized': { top: 'Non-Paid', mid: 'Not Set' },
+  'not set / not set': { top: 'Non-Paid', mid: 'Not Set' },
+  'non-coupon affiliate(s)': {
     top: 'Non-Paid',
     mid: 'Affiliate'
   },
-  'coupon affiliate(s) campaign items': { top: 'Non-Paid', mid: 'Affiliate' },
-  'organic non-brand campaign items': {
+  'coupon affiliate(s)': { top: 'Non-Paid', mid: 'Affiliate' },
+  'organic non-brand': {
     top: 'Non-Paid',
     mid: 'Organic Search'
   },
-  'organic brand campaign items': { top: 'Non-Paid', mid: 'Organic Search' },
-  'organic social campaign items': { top: 'Non-Paid', mid: 'Organic Social' },
-  'pinterest organic campaign items': {
+  'organic brand': { top: 'Non-Paid', mid: 'Organic Search' },
+  'organic social': { top: 'Non-Paid', mid: 'Organic Social' },
+  'pinterest organic': {
     top: 'Non-Paid',
     mid: 'Organic Social'
   },
-  'referral campaign items': { top: 'Non-Paid', mid: 'Referral' },
-  'email campaign items': { top: 'Non-Paid', mid: 'Email/SMS' },
-  'attentive - sms/text campaign items': {
+  'referral': { top: 'Non-Paid', mid: 'Referral' },
+  'email': { top: 'Non-Paid', mid: 'Email/SMS' },
+  'attentive - sms/text': {
     top: 'Non-Paid',
     mid: 'Email/SMS'
   },
-  'direct campaign items': { top: 'Non-Paid', mid: 'Direct' },
-  'google non-brand shopping campaigns items': {
+  'direct': { top: 'Non-Paid', mid: 'Direct' },
+  'google non-brand shopping': {
     top: 'Shopping',
     mid: 'NBR Shopping'
   },
-  'microsoft non-brand shopping campaigns items': {
+  'microsoft non-brand shopping': {
     top: 'Shopping',
     mid: 'NBR Shopping'
   },
-  'google brand shopping campaigns items': {
+  'google brand shopping': {
     top: 'Shopping',
     mid: 'BR Shopping'
   },
-  'microsoft brand shopping campaigns items': {
+  'microsoft brand shopping': {
     top: 'Shopping',
     mid: 'BR Shopping'
   },
-  'google non-brand text campaign items': {
+  'google non-brand text': {
     top: 'Search',
     mid: 'NBR Text'
   },
-  'microsoft non-brand text campaign items': {
+  'microsoft non-brand text': {
     top: 'Search',
     mid: 'NBR Text'
   },
-  'google brand text campaign items': {
+  'google brand text': {
     top: 'Search',
     mid: 'BR Text'
   },
-  'microsoft brand text campaign items': {
+  'microsoft brand text': {
     top: 'Search',
     mid: 'BR Text'
   },
-  'google demand gen campaign items': {
+  'google demand gen': {
     top: 'Display',
     mid: 'Google Display Prospecting'
   },
-  'google display ads campaign items': {
+  'google display ads': {
     top: 'Display',
     mid: 'Google Display Prospecting'
   },
-  'youtube prospecting campaign items': {
+  'youtube prospecting': {
     top: 'Display',
     mid: 'Google Display Prospecting'
   },
@@ -217,7 +217,10 @@ const defaultTopClassification = (mapping: string): string => {
 }
 
 const classifyInfo = (row: any): Classification => {
-  const mapping = (row.New_mapping || '').toLowerCase()
+  const mapping = (row.New_mapping || '')
+    .toLowerCase()
+    .replace(/\s+campaigns? items$/, '')
+    .trim()
   const found = classificationMap[mapping]
   if (found) return found
   return { top: defaultTopClassification(mapping), mid: 'Other' }
