@@ -9,4 +9,6 @@ To learn more about how custom component libraries work, visit our [official doc
 This component accepts a **layout** state value which controls how data rows are
 nested. Provide a JSON array of field names under the `layout` state to specify
 the order of groupings. The special key `"topClassification"` can be used to
-group rows using the built‑in classification logic.
+group rows using the built‑in classification logic. Campaign names that end with
+`"campaign items"` (or `"campaigns items"`) are normalized internally so these
+suffixes do not affect classification.
