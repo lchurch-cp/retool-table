@@ -193,10 +193,11 @@ export const CampaignTree = () => {
 
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '12px' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-        <thead>
-          <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
-            <th style={{ padding: '4px 8px', minWidth: '240px' }}>Name</th>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+          <thead>
+            <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
+              <th style={{ padding: '4px 8px', minWidth: '240px' }}>Name</th>
             {metricDefs.flatMap(def => [
               <th key={def.key} style={{ padding: '4px 8px' }}>{def.label}</th>,
               <th key={def.key + '-p'} style={{ padding: '4px 8px' }}>{def.label} Prior</th>,
@@ -225,7 +226,8 @@ export const CampaignTree = () => {
             })}
           </tr>
         </tfoot>
-      </table>
+        </table>
+      </div>
     </div>
   );
 };
