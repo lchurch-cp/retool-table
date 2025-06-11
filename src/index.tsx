@@ -148,7 +148,7 @@ export const CampaignTree = () => {
   });
 
   const formatNum = (num: number | undefined, digits: number) =>
-    num != null ? num.toFixed(digits) : '';
+    num != null ? num.toFixed(digits) : (0).toFixed(digits);
 
   const pctChange = (curr?: number, prior?: number) => {
     if (prior == null || prior === 0 || curr == null) return '';
