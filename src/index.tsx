@@ -153,13 +153,15 @@ export const CampaignTree = () => {
           key={key}
           style={{ fontWeight: hasChildren ? 'bold' : 'normal', background: hasChildren ? '#f9f9f9' : 'inherit' }}
         >
-          <td style={{ paddingLeft: `${depth * 20}px`, padding: '4px 8px' }}>
-            {hasChildren && (
-              <button onClick={() => toggleRow(key)} style={{ marginRight: '6px' }}>
-                {isExpanded ? '▾' : '▸'}
-              </button>
-            )}
-            {node.name}
+          <td style={{ padding: '4px 8px', minWidth: '240px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: `${depth * 24}px` }}>
+              {hasChildren && (
+                <button onClick={() => toggleRow(key)} style={{ marginRight: '6px' }}>
+                  {isExpanded ? '▾' : '▸'}
+                </button>
+              )}
+              <span>{node.name}</span>
+            </div>
           </td>
           {metricDefs.flatMap(def => {
             const curr = node.current[def.key];
@@ -181,7 +183,7 @@ export const CampaignTree = () => {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
         <thead>
           <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
-            <th style={{ padding: '4px 8px' }}>Name</th>
+            <th style={{ padding: '4px 8px', minWidth: '240px' }}>Name</th>
             {metricDefs.flatMap(def => [
               <th key={def.key} style={{ padding: '4px 8px' }}>{def.label}</th>,
               <th key={def.key + '-p'} style={{ padding: '4px 8px' }}>{def.label} Prior</th>,
