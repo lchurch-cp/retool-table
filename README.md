@@ -12,3 +12,8 @@ the order of groupings. The special key `"topClassification"` can be used to
 group rows using the built‑in classification logic. Campaign names that end with
 `"campaign items"` (or `"campaigns items"`) are normalized internally so these
 suffixes do not affect classification.
+
+### Exporting to CSV
+
+Use the **Export CSV** button above the table to download a file containing the
+current table data.
