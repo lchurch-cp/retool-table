@@ -7,12 +7,21 @@ type Metrics = {
   Cost?: number
   Revenue?: number
   Sessions?: number
+  Engaged_Sessions?: number
   Transactions?: number
+  Attributed_Transactions?: number
   NewUsers?: number
+  Impressions?: number
+  Link_Clicks?: number
   GA_last_click_revenue?: number
   Attributed_Revenue?: number
   Revenue_minus_embedded_awareness?: number
   embedded_awareness?: number
+  CPC?: number
+  CTR?: number
+  CPM?: number
+  CPS?: number
+  AROAS?: number
 }
 
 interface CampaignNode {
@@ -27,23 +36,33 @@ interface MetricDef {
   label: string
   digits: number
   currency?: boolean
+  derived?: boolean
+  suffix?: string
 }
 
 const metricDefs: readonly MetricDef[] = [
   { key: 'Cost', label: 'Spend', digits: 2, currency: true },
   { key: 'Revenue', label: 'Revenue', digits: 2, currency: true },
-  { key: 'Sessions', label: 'Sessions', digits: 0 },
-  { key: 'Transactions', label: 'Transactions', digits: 0 },
-  { key: 'NewUsers', label: 'New Users', digits: 0 },
-  {
-    key: 'GA_last_click_revenue',
-    label: 'GA Last Click Rev',
-    digits: 2,
-    currency: true
-  },
   {
     key: 'Attributed_Revenue',
     label: 'SP Attributed Rev',
+    digits: 2,
+    currency: true
+  },
+  { key: 'Sessions', label: 'Sessions', digits: 0 },
+  { key: 'Engaged_Sessions', label: 'Engaged Sessions', digits: 0 },
+  { key: 'Transactions', label: 'Transactions', digits: 0 },
+  {
+    key: 'Attributed_Transactions',
+    label: 'Attributed Transactions',
+    digits: 0
+  },
+  { key: 'NewUsers', label: 'New Users', digits: 0 },
+  { key: 'Impressions', label: 'Impressions', digits: 0 },
+  { key: 'Link_Clicks', label: 'Link Clicks', digits: 0 },
+  {
+    key: 'GA_last_click_revenue',
+    label: 'GA Last Click Rev',
     digits: 2,
     currency: true
   },
@@ -58,8 +77,15 @@ const metricDefs: readonly MetricDef[] = [
     label: 'Embedded Awareness',
     digits: 2,
     currency: true
-  }
+  },
+  { key: 'CPC', label: 'CPC', digits: 2, currency: true, derived: true },
+  { key: 'CTR', label: 'CTR', digits: 2, suffix: '%', derived: true },
+  { key: 'CPM', label: 'CPM', digits: 2, currency: true, derived: true },
+  { key: 'CPS', label: 'CPS', digits: 2, currency: true, derived: true },
+  { key: 'AROAS', label: 'Attributed ROAS', digits: 2, derived: true }
 ] as const
+
+const baseMetricDefs = metricDefs.filter((d) => !d.derived)
 
 interface Classification {
   top: string
@@ -301,7 +327,7 @@ export const CampaignTree = () => {
   const grouped: CampaignNode[] = []
 
   const addMetrics = (target: Metrics, row: any) => {
-    metricDefs.forEach((def) => {
+    baseMetricDefs.forEach((def) => {
       const val = row[def.key]
       target[def.key] =
         (target[def.key] || 0) + (typeof val === 'number' ? val : 0)
@@ -367,30 +393,63 @@ export const CampaignTree = () => {
     insertRow(grouped, row, 0, layoutKeys, true)
   })
 
+  const computeDerivedMetrics = (m: Metrics) => {
+    const cost = m.Cost || 0
+    const clicks = m.Link_Clicks || 0
+    const impressions = m.Impressions || 0
+    const sales =
+      m.Attributed_Transactions != null
+        ? m.Attributed_Transactions
+        : m.Transactions || 0
+    const attributedRevenue = m.Attributed_Revenue || 0
+
+    m.CPC = clicks ? cost / clicks : undefined
+    m.CTR = impressions ? (clicks / impressions) * 100 : undefined
+    m.CPM = impressions ? (cost / impressions) * 1000 : undefined
+    m.CPS = sales ? cost / sales : undefined
+    m.AROAS = cost ? attributedRevenue / cost : undefined
+  }
+
+  const computeDerivedForNodes = (nodes: CampaignNode[]) => {
+    nodes.forEach((node) => {
+      computeDerivedMetrics(node.current)
+      computeDerivedMetrics(node.prior)
+      if (node.children && node.children.length > 0) {
+        computeDerivedForNodes(node.children)
+      }
+    })
+  }
+
+  computeDerivedForNodes(grouped)
+
   const totals: { current: Metrics; prior: Metrics } = {
     current: {},
     prior: {}
   }
   grouped.forEach((node) => {
-    metricDefs.forEach((def) => {
+    baseMetricDefs.forEach((def) => {
       totals.current[def.key] =
         (totals.current[def.key] || 0) + (node.current[def.key] || 0)
       totals.prior[def.key] =
         (totals.prior[def.key] || 0) + (node.prior[def.key] || 0)
     })
   })
+  computeDerivedMetrics(totals.current)
+  computeDerivedMetrics(totals.prior)
 
   const formatNum = (
     num: number | undefined,
     digits: number,
-    currency = false
+    currency = false,
+    suffix = ''
   ) => {
     const value = num != null ? num : 0
     const formatted = value.toLocaleString(undefined, {
       minimumFractionDigits: digits,
       maximumFractionDigits: digits
     })
-    return currency ? `$${formatted}` : formatted
+    const withCurrency = currency ? `$${formatted}` : formatted
+    return withCurrency + suffix
   }
 
   const pctChange = (curr?: number, prior?: number) => {
@@ -414,8 +473,13 @@ export const CampaignTree = () => {
       const row: string[] = [name]
       metricDefs.forEach((def) => {
         row.push(
-          formatNum(node.current[def.key], def.digits, def.currency),
-          formatNum(node.prior[def.key], def.digits, def.currency),
+          formatNum(
+            node.current[def.key],
+            def.digits,
+            def.currency,
+            def.suffix
+          ),
+          formatNum(node.prior[def.key], def.digits, def.currency, def.suffix),
           pctChange(node.current[def.key], node.prior[def.key])
         )
       })
@@ -441,8 +505,13 @@ export const CampaignTree = () => {
     const totalRow: string[] = ['Grand Total']
     metricDefs.forEach((def) => {
       totalRow.push(
-        formatNum(totals.current[def.key], def.digits, def.currency),
-        formatNum(totals.prior[def.key], def.digits, def.currency),
+        formatNum(
+          totals.current[def.key],
+          def.digits,
+          def.currency,
+          def.suffix
+        ),
+        formatNum(totals.prior[def.key], def.digits, def.currency, def.suffix),
         pctChange(totals.current[def.key], totals.prior[def.key])
       )
     })
@@ -512,10 +581,10 @@ export const CampaignTree = () => {
             const prior = node.prior[def.key]
             return [
               <td key={`${key}-${def.key}`} style={{ padding: '4px 8px' }}>
-                {formatNum(curr, def.digits, def.currency)}
+                {formatNum(curr, def.digits, def.currency, def.suffix)}
               </td>,
               <td key={`${key}-${def.key}-p`} style={{ padding: '4px 8px' }}>
-                {formatNum(prior, def.digits, def.currency)}
+                {formatNum(prior, def.digits, def.currency, def.suffix)}
               </td>,
               <td key={`${key}-${def.key}-c`} style={{ padding: '4px 8px' }}>
                 {pctChange(curr, prior)}
@@ -584,10 +653,10 @@ export const CampaignTree = () => {
                 const prior = totals.prior[def.key]
                 return [
                   <td key={`total-${def.key}`} style={{ padding: '4px 8px' }}>
-                    {formatNum(curr, def.digits, def.currency)}
+                    {formatNum(curr, def.digits, def.currency, def.suffix)}
                   </td>,
                   <td key={`total-${def.key}-p`} style={{ padding: '4px 8px' }}>
-                    {formatNum(prior, def.digits, def.currency)}
+                    {formatNum(prior, def.digits, def.currency, def.suffix)}
                   </td>,
                   <td key={`total-${def.key}-c`} style={{ padding: '4px 8px' }}>
                     {pctChange(curr, prior)}
