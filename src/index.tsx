@@ -30,7 +30,7 @@ interface MetricDef {
 }
 
 const metricDefs: readonly MetricDef[] = [
-  { key: 'Cost', label: 'Cost', digits: 2, currency: true },
+  { key: 'Cost', label: 'Spend', digits: 2, currency: true },
   { key: 'Revenue', label: 'Revenue', digits: 2, currency: true },
   { key: 'Sessions', label: 'Sessions', digits: 0 },
   { key: 'Transactions', label: 'Transactions', digits: 0 },
@@ -43,7 +43,7 @@ const metricDefs: readonly MetricDef[] = [
   },
   {
     key: 'Attributed_Revenue',
-    label: 'Attributed Rev',
+    label: 'SP Attributed Rev',
     digits: 2,
     currency: true
   },
