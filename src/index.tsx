@@ -538,7 +538,16 @@ export const CampaignTree = () => {
             background: rowColor
           }}
         >
-          <td style={{ padding: '4px 8px', minWidth: '240px' }}>
+          <td
+            style={{
+              padding: '4px 8px',
+              minWidth: '240px',
+              position: 'sticky',
+              left: 0,
+              background: rowColor,
+              zIndex: 1
+            }}
+          >
             <div
               style={{
                 display: 'flex',
@@ -605,7 +614,18 @@ export const CampaignTree = () => {
         >
           <thead>
             <tr style={{ textAlign: 'left', borderBottom: '2px solid #ccc' }}>
-              <th style={{ padding: '4px 8px', minWidth: '240px' }}>Name</th>
+              <th
+                style={{
+                  padding: '4px 8px',
+                  minWidth: '240px',
+                  position: 'sticky',
+                  left: 0,
+                  background: '#ffffff',
+                  zIndex: 2
+                }}
+              >
+                Name
+              </th>
               {metricDefs.flatMap((def) => [
                 <th key={def.key} style={{ padding: '4px 8px' }}>
                   {def.label}
@@ -628,7 +648,17 @@ export const CampaignTree = () => {
                 background: rowCounter % 2 === 0 ? '#ffffff' : '#f2f2f2'
               }}
             >
-              <td style={{ padding: '4px 8px' }}>Grand Total</td>
+              <td
+                style={{
+                  padding: '4px 8px',
+                  position: 'sticky',
+                  left: 0,
+                  background: rowCounter % 2 === 0 ? '#ffffff' : '#f2f2f2',
+                  zIndex: 1
+                }}
+              >
+                Grand Total
+              </td>
               {metricDefs.flatMap((def) => {
                 const curr = totals.current[def.key]
                 const prior = totals.prior[def.key]
@@ -653,4 +683,3 @@ export const CampaignTree = () => {
 }
 
 export default CampaignTree
-
