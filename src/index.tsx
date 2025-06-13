@@ -127,8 +127,8 @@ const classificationMap: Record<string, Classification> = {
     mid: 'Social Performance Prospecting'
   },
   'tiktok - remarketing - mid funnel pm': {
-    top: 'Non-Paid',
-    mid: 'Other'
+    top: 'Social',
+    mid: 'Social Mid-Funnel Campaigns'
   },
   'misc/uncategorized': { top: 'Non-Paid', mid: 'Not Set' },
   'not set / not set': { top: 'Non-Paid', mid: 'Not Set' },
@@ -653,3 +653,4 @@ export const CampaignTree = () => {
 }
 
 export default CampaignTree
+
