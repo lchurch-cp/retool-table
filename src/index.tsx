@@ -42,47 +42,28 @@ interface MetricDef {
 
 const metricDefs: readonly MetricDef[] = [
   { key: 'Cost', label: 'Spend', digits: 2, currency: true },
-  { key: 'Revenue', label: 'Revenue', digits: 2, currency: true },
+  { key: 'Sessions', label: 'Sessions', digits: 0 },
   {
     key: 'Attributed_Revenue',
-    label: 'SP Attributed Rev',
+    label: 'SP Attributed Revenue',
     digits: 2,
     currency: true
   },
-  { key: 'Sessions', label: 'Sessions', digits: 0 },
-  { key: 'Engaged_Sessions', label: 'Engaged Sessions', digits: 0 },
   { key: 'Transactions', label: 'Transactions', digits: 0 },
-  {
-    key: 'Attributed_Transactions',
-    label: 'Attributed Transactions',
-    digits: 0
-  },
-  { key: 'NewUsers', label: 'New Users', digits: 0 },
   { key: 'Impressions', label: 'Impressions', digits: 0 },
+  { key: 'CPM', label: 'CPM', digits: 2, currency: true, derived: true },
   { key: 'Link_Clicks', label: 'Link Clicks', digits: 0 },
+  { key: 'CTR', label: 'CTR', digits: 2, suffix: '%', derived: true },
+  { key: 'CPC', label: 'CPC', digits: 2, currency: true, derived: true },
+  { key: 'CPS', label: 'CPS', digits: 2, currency: true, derived: true },
+  { key: 'NewUsers', label: 'New Users', digits: 0 },
+  { key: 'AROAS', label: 'Attributed ROAS', digits: 2, derived: true },
   {
     key: 'GA_last_click_revenue',
-    label: 'GA Last Click Rev',
+    label: 'GA Last Click Revenue',
     digits: 2,
     currency: true
-  },
-  {
-    key: 'Revenue_minus_embedded_awareness',
-    label: 'Rev minus Awareness',
-    digits: 2,
-    currency: true
-  },
-  {
-    key: 'embedded_awareness',
-    label: 'Embedded Awareness',
-    digits: 2,
-    currency: true
-  },
-  { key: 'CPC', label: 'CPC', digits: 2, currency: true, derived: true },
-  { key: 'CTR', label: 'CTR', digits: 2, suffix: '%', derived: true },
-  { key: 'CPM', label: 'CPM', digits: 2, currency: true, derived: true },
-  { key: 'CPS', label: 'CPS', digits: 2, currency: true, derived: true },
-  { key: 'AROAS', label: 'Attributed ROAS', digits: 2, derived: true }
+  }
 ] as const
 
 const baseMetricDefs = metricDefs.filter((d) => !d.derived)
