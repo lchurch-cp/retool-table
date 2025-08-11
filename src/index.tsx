@@ -227,6 +227,7 @@ const defaultTopClassification = (mapping: string): string => {
 
 const classifyInfo = (row: any): Classification => {
   const mapping = (row.New_mapping || '')
+    .toString()
     .toLowerCase()
     .replace(/\s+campaigns? items$/, '')
     .trim()
@@ -236,12 +237,16 @@ const classifyInfo = (row: any): Classification => {
 }
 
 const classifyTopLevel = (row: any): string => {
-  if (row.Top_Level_Group) return row.Top_Level_Group
+  if (row.Top_Level_Group && row.Top_Level_Group !== '(not set)' && row.Top_Level_Group !== '') {
+    return row.Top_Level_Group.toString()
+  }
   return classifyInfo(row).top
 }
 
 const classifySecondLevel = (row: any): string => {
-  if (row.Sub_Group) return row.Sub_Group
+  if (row.Sub_Group && row.Sub_Group !== '(not set)' && row.Sub_Group !== '') {
+    return row.Sub_Group.toString()
+  }
   return classifyInfo(row).mid
 }
 
@@ -332,7 +337,7 @@ export const CampaignTree = () => {
             ? classifySecondLevel(row)
             : row[key]
 
-    if (!rawValue || rawValue === '(Unnamed)') {
+    if (!rawValue || rawValue === '(Unnamed)' || rawValue === '' || rawValue === 'null' || rawValue === 'undefined') {
       if (depth < keys.length - 1) {
         // Skip unnamed levels and attach children directly to the parent
         insertRow(nodes, row, depth + 1, keys, isPrior)
@@ -391,6 +396,21 @@ export const CampaignTree = () => {
     m.AROAS = cost ? attributedRevenue / cost : undefined
   }
 
+  const aggregateChildMetrics = (node: CampaignNode) => {
+    if (!node.children || node.children.length === 0) return
+    
+    // First, recursively aggregate children
+    node.children.forEach(child => aggregateChildMetrics(child))
+    
+    // Then aggregate child metrics into this node
+    node.children.forEach((child) => {
+      baseMetricDefs.forEach((def) => {
+        node.current[def.key] = (node.current[def.key] || 0) + (child.current[def.key] || 0)
+        node.prior[def.key] = (node.prior[def.key] || 0) + (child.prior[def.key] || 0)
+      })
+    })
+  }
+
   const computeDerivedForNodes = (nodes: CampaignNode[]) => {
     nodes.forEach((node) => {
       computeDerivedMetrics(node.current)
@@ -401,13 +421,29 @@ export const CampaignTree = () => {
     })
   }
 
+  // First aggregate child metrics into parent nodes
+  grouped.forEach(node => aggregateChildMetrics(node))
+  
+  // Then compute derived metrics for all nodes (must be done after aggregation)
   computeDerivedForNodes(grouped)
+
+  const getLeafNodes = (nodes: CampaignNode[]): CampaignNode[] => {
+    return nodes.flatMap(node => {
+      if (!node.children || node.children.length === 0) {
+        return [node]
+      }
+      return getLeafNodes(node.children)
+    })
+  }
 
   const totals: { current: Metrics; prior: Metrics } = {
     current: {},
     prior: {}
   }
-  grouped.forEach((node) => {
+  
+  // Calculate totals from leaf nodes only to avoid double counting
+  const leafNodes = getLeafNodes(grouped)
+  leafNodes.forEach((node) => {
     baseMetricDefs.forEach((def) => {
       totals.current[def.key] =
         (totals.current[def.key] || 0) + (node.current[def.key] || 0)
