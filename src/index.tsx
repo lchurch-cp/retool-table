@@ -6,22 +6,23 @@ import { Retool } from '@tryretool/custom-component-support'
 type Metrics = {
   Cost?: number
   Revenue?: number
+  Attributed_Revenue?: number
+  Attributed_Transactions?: number
+  Platform_Revenue?: number
+  GA_last_click_revenue?: number
+  embedded_awareness?: number
+  Revenue_minus_embedded_awareness?: number
   Sessions?: number
   Engaged_Sessions?: number
   Transactions?: number
-  Attributed_Transactions?: number
   NewUsers?: number
   Impressions?: number
   Link_Clicks?: number
-  GA_last_click_revenue?: number
-  Attributed_Revenue?: number
-  Revenue_minus_embedded_awareness?: number
-  embedded_awareness?: number
   CPC?: number
   CTR?: number
   CPM?: number
   CPS?: number
-  AROAS?: number
+  ROAS?: number
 }
 
 interface CampaignNode {
@@ -29,6 +30,7 @@ interface CampaignNode {
   current: Metrics
   prior: Metrics
   children?: CampaignNode[]
+  rawData?: any[]
 }
 
 interface MetricDef {
@@ -43,245 +45,46 @@ interface MetricDef {
 const metricDefs: readonly MetricDef[] = [
   { key: 'Cost', label: 'Spend', digits: 2, currency: true },
   { key: 'Sessions', label: 'Sessions', digits: 0 },
-  {
-    key: 'Attributed_Revenue',
-    label: 'SP Attributed Revenue',
-    digits: 2,
-    currency: true
-  },
   { key: 'Transactions', label: 'Transactions', digits: 0 },
   { key: 'Impressions', label: 'Impressions', digits: 0 },
-  { key: 'CPM', label: 'CPM', digits: 2, currency: true, derived: true },
   { key: 'Link_Clicks', label: 'Link Clicks', digits: 0 },
+  { key: 'Platform_Revenue', label: 'Platform Revenue', digits: 2, currency: true },
+  { key: 'CPM', label: 'CPM', digits: 2, currency: true, derived: true },
   { key: 'CTR', label: 'CTR', digits: 2, suffix: '%', derived: true },
   { key: 'CPC', label: 'CPC', digits: 2, currency: true, derived: true },
   { key: 'CPS', label: 'CPS', digits: 2, currency: true, derived: true },
   { key: 'NewUsers', label: 'New Users', digits: 0 },
-  { key: 'AROAS', label: 'Attributed ROAS', digits: 2, derived: true },
-  {
-    key: 'GA_last_click_revenue',
-    label: 'GA Last Click Revenue',
-    digits: 2,
-    currency: true
-  }
+  { key: 'ROAS', label: 'ROAS', digits: 2, derived: true },
+  { key: 'GA_last_click_revenue', label: 'GA Last Click Revenue', digits: 2, currency: true },
+  { key: 'Attributed_Transactions', label: 'Attributed Transactions', digits: 0 },
+  { key: 'Attributed_Revenue', label: 'Attributed Revenue', digits: 2, currency: true }
 ] as const
 
 const baseMetricDefs = metricDefs.filter((d) => !d.derived)
-
-interface Classification {
-  top: string
-  mid: string
-}
-
-const classificationMap: Record<string, Classification> = {
-  'paid social awareness': {
-    top: 'Social',
-    mid: 'Social Organic Boosting'
-  },
-  'paid social - iris': {
-    top: 'Social',
-    mid: 'Social Mid-Funnel Campaigns'
-  },
-  'meta - acquisition - mid funnel pm': {
-    top: 'Social',
-    mid: 'Social Mid-Funnel Campaigns'
-  },
-  'meta - remarketing - mid funnel pm': {
-    top: 'Social',
-    mid: 'Social Mid-Funnel Campaigns'
-  },
-  'youtube - acquisition - mid funnel pm': {
-    top: 'Social',
-    mid: 'Social Mid-Funnel Campaigns'
-  },
-  'tiktok - acquisition - mid funnel pm': {
-    top: 'Social',
-    mid: 'Social Mid-Funnel Campaigns'
-  },
-  'facebook prospecting - daba': {
-    top: 'Social',
-    mid: 'Social DABA'
-  },
-  'pinterest remarketing': {
-    top: 'Social',
-    mid: 'Social Retargeting'
-  },
-  'tiktok - remarketing': {
-    top: 'Social',
-    mid: 'Social Retargeting'
-  },
-  'tiktok remarketing': {
-    top: 'Social',
-    mid: 'Social Retargeting'
-  },
-  'facebook remarketing': {
-    top: 'Social',
-    mid: 'Social Retargeting'
-  },
-  'pinterest paid prospecting': {
-    top: 'Social',
-    mid: 'Social Performance Prospecting'
-  },
-  'facebook prospecting': {
-    top: 'Social',
-    mid: 'Social Performance Prospecting'
-  },
-  'tiktok - remarketing - mid funnel pm': {
-    top: 'Social',
-    mid: 'Social Mid-Funnel Campaigns'
-  },
-  'misc/uncategorized': { top: 'Non-Paid', mid: 'Not Set' },
-  'not set / not set': { top: 'Non-Paid', mid: 'Not Set' },
-  'non-coupon affiliate(s)': {
-    top: 'Non-Paid',
-    mid: 'Affiliate'
-  },
-  'coupon affiliate(s)': { top: 'Non-Paid', mid: 'Affiliate' },
-  'organic non-brand': {
-    top: 'Non-Paid',
-    mid: 'Organic Search'
-  },
-  'organic brand': { top: 'Non-Paid', mid: 'Organic Search' },
-  'organic social': { top: 'Non-Paid', mid: 'Organic Social' },
-  'pinterest organic': {
-    top: 'Non-Paid',
-    mid: 'Organic Social'
-  },
-  referral: { top: 'Non-Paid', mid: 'Referral' },
-  email: { top: 'Non-Paid Email/SMS', mid: 'Email/SMS' },
-  'attentive - sms/text': {
-    top: 'Non-Paid Email/SMS',
-    mid: 'Email/SMS'
-  },
-  direct: { top: 'Non-Paid', mid: 'Direct' },
-  'google non-brand shopping': {
-    top: 'Shopping',
-    mid: 'NBR Shopping'
-  },
-  'microsoft non-brand shopping': {
-    top: 'Shopping',
-    mid: 'NBR Shopping'
-  },
-  'google brand shopping': {
-    top: 'Shopping',
-    mid: 'BR Shopping'
-  },
-  'microsoft brand shopping': {
-    top: 'Shopping',
-    mid: 'BR Shopping'
-  },
-  'google non-brand text': {
-    top: 'Search',
-    mid: 'NBR Text'
-  },
-  'microsoft non-brand text': {
-    top: 'Search',
-    mid: 'NBR Text'
-  },
-  'google brand text': {
-    top: 'Search',
-    mid: 'BR Text'
-  },
-  'microsoft brand text': {
-    top: 'Search',
-    mid: 'BR Text'
-  },
-  'google demand gen': {
-    top: 'Display',
-    mid: 'Google Display Prospecting'
-  },
-  'google display ads': {
-    top: 'Display',
-    mid: 'Google Display Prospecting'
-  },
-  'youtube prospecting': {
-    top: 'Display',
-    mid: 'Google Display Prospecting'
-  },
-  'google display and video retargeting': {
-    top: 'Display',
-    mid: 'Google Display Remarketing'
-  }
-}
-
-const defaultTopClassification = (mapping: string): string => {
-  if (mapping.includes('shopping')) return 'Shopping'
-  if (mapping.includes('search')) return 'Search'
-  if (
-    mapping.includes('social') ||
-    mapping.includes('facebook') ||
-    mapping.includes('tiktok')
-  )
-    return 'Social'
-  if (mapping.includes('display') || mapping.includes('daba')) return 'Display'
-  if (mapping.includes('email') || mapping.includes('sms'))
-    return 'Non-Paid Email/SMS'
-  if (
-    mapping.includes('organic') ||
-    mapping.includes('not set') ||
-    mapping.includes('affiliate')
-  )
-    return 'Non-Paid'
-  return 'Other'
-}
-
-const classifyInfo = (row: any): Classification => {
-  const mapping = (row.New_mapping || '')
-    .toString()
-    .toLowerCase()
-    .replace(/\s+campaigns? items$/, '')
-    .trim()
-  const found = classificationMap[mapping]
-  if (found) return found
-  return { top: defaultTopClassification(mapping), mid: 'Other' }
-}
-
-const classifyTopLevel = (row: any): string => {
-  if (row.Top_Level_Group && row.Top_Level_Group !== '(not set)' && row.Top_Level_Group !== '') {
-    return row.Top_Level_Group.toString()
-  }
-  return classifyInfo(row).top
-}
-
-const classifySecondLevel = (row: any): string => {
-  if (row.Sub_Group && row.Sub_Group !== '(not set)' && row.Sub_Group !== '') {
-    return row.Sub_Group.toString()
-  }
-  return classifyInfo(row).mid
-}
-
-const classifyMarketingGroup = (row: any): string => {
-  const info = classifyInfo(row)
-  // Treat anything that isn't explicitly "Non-Paid" as part of Marketing.
-  // This ensures Display and uncategorized rows are grouped under Marketing
-  // instead of Non-Marketing.
-  return info.top === 'Non-Paid' ? 'Non-Marketing' : 'Marketing'
-}
 
 export const CampaignTree = () => {
   const [data] = Retool.useStateObject({
     name: 'data',
     label: 'Campaign Data',
     inspector: 'text',
-    description: 'Nested campaign hierarchy'
+    description: 'Current period campaign data from SQL query'
   })
 
   const [priorData] = Retool.useStateObject({
     name: 'priorData',
     label: 'Prior Data',
     inspector: 'text',
-    description: 'Prior date range data'
+    description: 'Prior period campaign data from SQL query'
   })
 
   const [layout] = Retool.useStateArray({
     name: 'layout',
     label: 'Nesting Layout',
     inspector: 'text',
-    description:
-      'JSON array of field names that defines the nesting order. Use "topClassification" for computed top level.',
+    description: 'JSON array of field names that defines the nesting order',
     initialValue: [
-      'topClassification',
-      'secondClassification',
+      'Top_Level_Group',
+      'Sub_Group',
       'New_mapping',
       'Campaign_Nm'
     ]
@@ -315,9 +118,13 @@ export const CampaignTree = () => {
   const addMetrics = (target: Metrics, row: any) => {
     baseMetricDefs.forEach((def) => {
       const val = row[def.key]
-      target[def.key] =
-        (target[def.key] || 0) + (typeof val === 'number' ? val : 0)
+      target[def.key] = (target[def.key] || 0) + (typeof val === 'number' ? val : 0)
     })
+  }
+
+  const classifyMarketingGroup = (row: any): string => {
+    const topLevel = row.Top_Level_Group || ''
+    return topLevel === 'Non-Paid' ? 'Non-Marketing' : 'Marketing'
   }
 
   const insertRow = (
@@ -328,18 +135,17 @@ export const CampaignTree = () => {
     isPrior: boolean
   ) => {
     const key = keys[depth]
-    const rawValue =
-      key === 'marketingClassification'
-        ? classifyMarketingGroup(row)
-        : key === 'topClassification'
-          ? classifyTopLevel(row)
-          : key === 'secondClassification'
-            ? classifySecondLevel(row)
-            : row[key]
+    const rawValue = key === 'marketingClassification' 
+      ? classifyMarketingGroup(row)
+      : row[key]
 
-    if (!rawValue || rawValue === '(Unnamed)' || rawValue === '' || rawValue === 'null' || rawValue === 'undefined') {
+    if (!rawValue || 
+        rawValue === '(Unnamed)' || 
+        rawValue === '' || 
+        rawValue === 'null' || 
+        rawValue === 'undefined' ||
+        rawValue === '(not set)') {
       if (depth < keys.length - 1) {
-        // Skip unnamed levels and attach children directly to the parent
         insertRow(nodes, row, depth + 1, keys, isPrior)
       }
       return
@@ -347,26 +153,33 @@ export const CampaignTree = () => {
 
     let node = nodes.find((n) => n.name === rawValue)
     if (!node) {
-      node = { name: rawValue, current: {}, prior: {}, children: [] }
+      node = { 
+        name: rawValue, 
+        current: {}, 
+        prior: {}, 
+        children: [],
+        rawData: []
+      }
       nodes.push(node)
     }
 
-    addMetrics(isPrior ? node.prior : node.current, row)
-
-    if (depth < keys.length - 1) {
+    // Only add metrics to leaf nodes (when we've reached the end of the hierarchy)
+    if (depth === keys.length - 1) {
+      addMetrics(isPrior ? node.prior : node.current, row)
+      
+      if (!isPrior) {
+        node.rawData = node.rawData || []
+        node.rawData.push(row)
+      }
+    } else {
+      // For non-leaf nodes, just continue down the tree
       insertRow(node.children!, row, depth + 1, keys, isPrior)
     }
   }
 
-  const baseLayoutKeys =
-    Array.isArray(layout) && layout.length > 0
-      ? (layout as string[])
-      : [
-          'topClassification',
-          'secondClassification',
-          'New_mapping',
-          'Campaign_Nm'
-        ]
+  const baseLayoutKeys = Array.isArray(layout) && layout.length > 0
+    ? (layout as string[])
+    : ['Top_Level_Group', 'Sub_Group', 'New_mapping', 'Campaign_Nm']
 
   const layoutKeys = marketingView
     ? ['marketingClassification', ...baseLayoutKeys]
@@ -383,26 +196,21 @@ export const CampaignTree = () => {
     const cost = m.Cost || 0
     const clicks = m.Link_Clicks || 0
     const impressions = m.Impressions || 0
-    const sales =
-      m.Attributed_Transactions != null
-        ? m.Attributed_Transactions
-        : m.Transactions || 0
-    const attributedRevenue = m.Attributed_Revenue || 0
+    const transactions = m.Transactions || 0
+    const platformRevenue = m.Platform_Revenue || 0
 
-    m.CPC = clicks ? cost / clicks : undefined
-    m.CTR = impressions ? (clicks / impressions) * 100 : undefined
-    m.CPM = impressions ? (cost / impressions) * 1000 : undefined
-    m.CPS = sales ? cost / sales : undefined
-    m.AROAS = cost ? attributedRevenue / cost : undefined
+    m.CPC = clicks > 0 ? cost / clicks : undefined
+    m.CTR = impressions > 0 ? (clicks / impressions) * 100 : undefined
+    m.CPM = impressions > 0 ? (cost / impressions) * 1000 : undefined
+    m.CPS = transactions > 0 ? cost / transactions : undefined
+    m.ROAS = cost > 0 ? platformRevenue / cost : undefined
   }
 
   const aggregateChildMetrics = (node: CampaignNode) => {
     if (!node.children || node.children.length === 0) return
     
-    // First, recursively aggregate children
     node.children.forEach(child => aggregateChildMetrics(child))
     
-    // Then aggregate child metrics into this node
     node.children.forEach((child) => {
       baseMetricDefs.forEach((def) => {
         node.current[def.key] = (node.current[def.key] || 0) + (child.current[def.key] || 0)
@@ -421,10 +229,7 @@ export const CampaignTree = () => {
     })
   }
 
-  // First aggregate child metrics into parent nodes
   grouped.forEach(node => aggregateChildMetrics(node))
-  
-  // Then compute derived metrics for all nodes (must be done after aggregation)
   computeDerivedForNodes(grouped)
 
   const getLeafNodes = (nodes: CampaignNode[]): CampaignNode[] => {
@@ -441,9 +246,8 @@ export const CampaignTree = () => {
     prior: {}
   }
   
-  // Calculate totals from leaf nodes only to avoid double counting
-  const leafNodes = getLeafNodes(grouped)
-  leafNodes.forEach((node) => {
+  // Calculate totals from top-level nodes since they now contain aggregated data
+  grouped.forEach((node) => {
     baseMetricDefs.forEach((def) => {
       totals.current[def.key] =
         (totals.current[def.key] || 0) + (node.current[def.key] || 0)
@@ -560,8 +364,7 @@ export const CampaignTree = () => {
     return nodes.flatMap((node, index) => {
       const key = `${parentKey}-${index}`
       const isExpanded = expandedKeys[key]
-      const hasChildren =
-        Array.isArray(node.children) && node.children.length > 0
+      const hasChildren = Array.isArray(node.children) && node.children.length > 0
 
       const rowColor = rowCounter % 2 === 0 ? '#ffffff' : '#f2f2f2'
       rowCounter++
